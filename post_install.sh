@@ -56,9 +56,15 @@ GRANT ALL PRIVILEGES ON ${DB}.* TO '${USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
+#Create cronjob
+crontab -u www <<__EOF__
+*/5  *  *  *  * php -f /usr/local/www/nextcloud/cron.php
+__EOF__
+
 #Use occ to complete Nextcloud installation
 su -m www -c "php /usr/local/www/nextcloud/occ maintenance:install --database=\"mysql\" --database-name=\"nextcloud\" --database-user=\"$USER\" --database-pass=\"$PASS\" --database-host=\"localhost\" --admin-user=\"$NCUSER\" --admin-pass=\"$NCPASS\" --data-dir=\"/usr/local/www/nextcloud/data\"" 
 su -m www -c "php /usr/local/www/nextcloud/occ config:system:set trusted_domains 1 --value=\"${IOCAGE_PLUGIN_IP}\""
+su -m www -c 'php /usr/local/www/nextcloud/occ background:cron'
 
 #workaround for occ (in shell just use occ instead of su -m www -c "....")
 echo >> .cshrc
